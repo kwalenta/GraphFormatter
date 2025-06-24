@@ -1,0 +1,25 @@
+# Core dependencies
+dash
+matplotlib==3.10.1
+narwhals==1.32.0
+openpyxl==3.1.5
+pandas==2.2.3
+plotly==6.0.1
+pyyaml==6.0.2
+
+# Sphinx and documentation tools
+sphinx==8.2.3
+babel==2.16.0
+pygments==2.19.1
+snowballstemmer==2.2.0
+imagesize==1.4.1
+
+# pip-only dependencies
+sphinx_rtd_theme==3.0.2
+roman-numerals==3.1.0
+myst-parser==4.0.1
+sphinx-autobuild==2024.10.3
+docutils==0.21.2
+dash-leaflet==1.1.1
+dash-extensions==2.0.4
+dash_daq==0.6.0
