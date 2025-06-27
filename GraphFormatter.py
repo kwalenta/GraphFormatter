@@ -119,10 +119,32 @@ class GraphFormatter:
                     dcc.Store(id="selected-trace", data=None),
                     dcc.Store(id="trace-colors", data={}),
                     html.Div([
+                        html.Label("Line Color"),
                         daq.ColorPicker(id="trace-color-picker", value={"hex": "#636EFA"}),
+
+                        html.Label("Line Width"),
+                        dcc.Input(id="trace-line-width", type="number", min=0.5, step=0.5, value=2),
+
+                        html.Label("Dash Style"),
+                        dcc.Dropdown(
+                            id="trace-line-style",
+                            options=[
+                                {"label": "Solid", "value": "solid"},
+                                {"label": "Dash", "value": "dash"},
+                                {"label": "Dot", "value": "dot"},
+                                {"label": "DashDot", "value": "dashdot"},
+                            ],
+                            value="solid"
+                        ),
+
+                        html.Label("Opacity"),
+                        dcc.Slider(id="trace-opacity", min=0, max=1, step=0.05, value=1),
+
                         html.Button("✖ Close", id="trace-color-close")
-                    ], id="trace-color-picker-container", style={"display": "none", "marginTop": "10px"})
+                    ], id="trace-color-picker-container", style={"display": "none", "marginTop": "10px", "width": "250px"})
+
                 ]),
+
 
                 html.Div([
                     dash_table.DataTable(
@@ -255,16 +277,25 @@ class GraphFormatter:
 
             fig = go.Figure()
 
+            # Plot selected columns
             for col in selected_columns:
-                color = trace_colors.get(col, None)
+
+                style = trace_colors.get(col, {})
                 fig.add_trace(go.Scatter(
                     x=self.df_data.index,
                     y=self.df_data[col],
                     mode="lines+markers",
                     name=col,
-                    line=dict(color=color) if color else None
+                    line=dict(
+                        color=style.get("color"),
+                        width=style.get("width", 2),
+                        dash=style.get("dash", "solid")
+                    ),
+                    opacity=style.get("opacity", 1.0)
                 ))
 
+
+            # Apply layout settings
             fig.update_layout(
                 xaxis=updated_config.get("xaxis", {}),
                 yaxis=updated_config.get("yaxis", {}),
@@ -336,18 +367,37 @@ class GraphFormatter:
                 return {"display": "block"}, trace_name
             return dash.no_update, dash.no_update
 
+        # @self.app.callback(
+        #     Output("trace-colors", "data"),
+        #     Input("trace-color-picker", "value"),
+        #     State("selected-trace", "data"),
+        #     State("trace-colors", "data"),
+        #     prevent_initial_call=True
+        # )
+        # def update_trace_color(picked, trace_name, color_map):
+        #     if trace_name is None:
+        #         return color_map
+        #     color_map[trace_name] = picked["hex"]
+        #     return color_map
         @self.app.callback(
-            Output("trace-colors", "data"),
+            Output("trace-colors", "data", allow_duplicate=True),
             Input("trace-color-picker", "value"),
+            Input("trace-line-width", "value"),
+            Input("trace-line-style", "value"),
+            Input("trace-opacity", "value"),
             State("selected-trace", "data"),
             State("trace-colors", "data"),
-            prevent_initial_call=True
+            prevent_initial_call="initial_duplicate"
         )
-        def update_trace_color(picked, trace_name, color_map):
-            if trace_name is None:
-                return color_map
-            color_map[trace_name] = picked["hex"]
-            return color_map
+        def update_trace_style(color, width, dash, opacity, trace_name, data):
+            if trace_name:
+                data[trace_name] = {
+                    "color": color["hex"],
+                    "width": width,
+                    "dash": dash,
+                    "opacity": opacity
+                }
+            return data
 
     def register_toggle_callbacks(self):
         """

@@ -18,6 +18,7 @@ xaxis:
   showgrid: false
   zeroline: true
   range: [0, 100]
+
 yaxis:
   showline: true
   linecolor: black
@@ -25,6 +26,7 @@ yaxis:
   showgrid: true
   zeroline: true
   range: [0, 100]
+
 title:
   text: Glorious Plotly Chart
   subtitle: With a clean subtitle
@@ -33,6 +35,7 @@ title:
   y: 1.08
   xanchor: center
   yanchor: top
+
 description:
   text: Proportion of survey respondents (%)
   fontsize: 14
@@ -41,6 +44,7 @@ description:
   y: 0.98
   xanchor: left
   yanchor: top
+
 footnote:
   text: 'Source: Imagination, 2025'
   fontsize: 12
@@ -49,6 +53,7 @@ footnote:
   y: -0.15
   xanchor: left
   yanchor: bottom
+
 top-line:
   enabled: true
   color: black
@@ -56,6 +61,7 @@ top-line:
   y: 1.02
   x0: 0
   x1: 1
+
 legend:
   orientation: h
   x: 0.5
@@ -65,3 +71,5 @@ legend:
   bgcolor: rgba(255, 255, 255, 0.8)
   bordercolor: black
   borderwidth: 1
+
+
