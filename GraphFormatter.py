@@ -344,6 +344,21 @@ class GraphFormatter:
                 legend=updated_config.get("legend", {})
             )
 
+                # Optional line above plot
+            if updated_config["top-line"]["enabled"]:
+                fig.add_shape(
+                    type="line",
+                    xref="paper", yref="paper",
+                    y0=updated_config["top-line"]["y"],
+                    y1=updated_config["top-line"]["y"],
+                    x0 = updated_config["top-line"]["x0"],
+                    x1 = updated_config["top-line"]["x1"],
+                    line=dict(
+                        color=updated_config["top-line"]["color"],
+                        width=updated_config["top-line"]["width"]
+                    )
+                )
+
             return fig
 
         @self.app.callback(
