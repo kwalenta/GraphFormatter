@@ -3,6 +3,13 @@ properties:
   height: 600
   paper_bgcolor: white
   plot_bgcolor: white
+
+margin:
+  t: 130
+  b: 100
+  l: 80
+  r: 80
+
 xaxis:
   showline: true
   linecolor: black
@@ -10,12 +17,14 @@ xaxis:
   ticks: outside
   showgrid: false
   zeroline: true
+  range: [0, 100]
 yaxis:
   showline: true
   linecolor: black
   linewidth: 2
   showgrid: true
   zeroline: true
+  range: [0, 100]
 title:
   text: Glorious Plotly Chart
   subtitle: With a clean subtitle

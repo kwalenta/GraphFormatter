@@ -77,8 +77,13 @@ class GraphFormatter:
         """
         ids = []
         for section, settings in self.config.items():
-            for setting in settings:
-                ids.append(Input(f"{section}-{setting}", "value"))
+            for setting, value in settings.items():  # <-- FIXED
+                if isinstance(value, list) and len(value) == 2:
+                    ids.append(Input(f"{section}-{setting}_0", "value"))
+                    ids.append(Input(f"{section}-{setting}_1", "value"))
+                else:
+                    ids.append(Input(f"{section}-{setting}", "value"))
+
         ids.append(Input("data-table", "selected_columns"))
         ids.append(Input("trace-colors", "data"))
         return ids
@@ -181,6 +186,12 @@ class GraphFormatter:
                 ])
             elif isinstance(value, str):
                 input_component = dcc.Input(type="text", value=value, id=input_id, style={"width": "150px"})
+            elif isinstance(value, list) and len(value) == 2: # for ranges like xlimit
+                input_component = html.Div([
+                    dcc.Input(type="number", value=value[0], id=f"{input_id}_0", style={"width": "80px", "marginRight": "5px"}),
+                    dcc.Input(type="number", value=value[1], id=f"{input_id}_1", style={"width": "80px"})
+                ])
+
             else:
                 input_component = html.Div(f"Unsupported type for {setting}")
 
@@ -231,11 +242,16 @@ class GraphFormatter:
                     input_val = values[i]
                     if isinstance(default_val, bool):
                         updated_config[section][setting] = "on" in (input_val or [])
+                        i += 1
                     elif isinstance(default_val, str) and "color" in setting:
                         updated_config[section][setting] = input_val["hex"] if isinstance(input_val, dict) else input_val
+                        i += 1
+                    elif isinstance(default_val, list) and len(default_val) == 2:
+                        updated_config[section][setting] = [values[i], values[i+1]]
+                        i += 2
                     else:
                         updated_config[section][setting] = input_val
-                    i += 1
+                        i += 1
 
             fig = go.Figure()
 
@@ -256,7 +272,8 @@ class GraphFormatter:
                 height=updated_config["properties"]["height"],
                 paper_bgcolor=updated_config["properties"]["paper_bgcolor"],
                 plot_bgcolor=updated_config["properties"]["plot_bgcolor"],
-                margin=dict(t=130, b=100),
+                # margin=dict(t=130, b=100),
+                margin=updated_config.get("margin", dict(t=130, b=100)),
                 template="plotly_white",
                 annotations=[
                     dict(
