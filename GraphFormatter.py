@@ -649,33 +649,32 @@ class GraphFormatter:
             Input("trace-line-width", "value"),
             Input("trace-line-style", "value"),
             Input("trace-opacity", "value"),
+            Input("trace-scatter-symbol", "value"),    # new
             State("selected-trace", "data"),
             State("trace-properties", "data"),
             prevent_initial_call="initial_duplicate"
         )
-        def update_trace_style(color, width, dash, opacity, trace_name, data):
+        def update_trace_style(color, width, dash, opacity, symbol, trace_name, data):
             if trace_name:
-                plot_type = self.config.get("properties", {}).get("plot_type", "line")
-                
                 style_data = {
                     "color": color["hex"] if color else "#636EFA",
                     "opacity": opacity if opacity is not None else 1.0
                 }
-                
-                # Add plot-type specific properties
-                if plot_type in ["line", "area"]:
-                    style_data.update({
-                        "width": width if width is not None else 2,
-                        "dash": dash if dash else "solid"
-                    })
-                elif plot_type == "bar_stacked" or plot_type == "bar_grouped":
-                    style_data["width"] = width if width is not None else 0  # border width
-                elif plot_type == "scatter":
-                    style_data["width"] = width if width is not None else 8  # marker size
-                
+
+                if width is not None:
+                    style_data["width"] = width
+
+                if dash:
+                    style_data["dash"] = dash
+
+                if symbol:
+                    style_data["symbol"] = symbol  # only relevant for scatter, but OK to store
+
+
                 data[trace_name] = style_data
-            
+
             return data
+
     
     def run(self):
         """
