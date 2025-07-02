@@ -1,3 +1,6 @@
+plot_settings:
+  type: "line"  # Options: "line", "bar", "scatter", "area"
+
 properties:
   width: 800
   height: 600
