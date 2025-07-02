@@ -105,62 +105,38 @@ class GraphFormatter:
             dash.html.Div: The root Div containing all layout components.
         """
         return html.Div([
-            html.H3("Plot Customizer"),
-
-            html.Div([
-                *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]
-            ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
-
-            html.Div([
-                html.Div([
-                    dcc.Graph(id="figure")
-                ], style={"width": "50%", "display": "inline-block", "verticalAlign": "top"}),
-
-                html.Div([
                     dcc.Store(id="selected-trace", data=None),
                     dcc.Store(id="trace-properties", data={}),
+                    
+                    html.H3("Plot Customizer"),
+
                     html.Div([
-                        html.Label("Line Color"),
-                        daq.ColorPicker(id="trace-properties-picker", value={"hex": "#636EFA"}),
+                        *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]
+                    ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
 
-                        html.Label("Line Width"),
-                        dcc.Input(id="trace-line-width", type="number", min=0.5, step=0.5, value=2),
-
-                        html.Label("Dash Style"),
-                        dcc.Dropdown(
-                            id="trace-line-style",
-                            options=[
-                                {"label": "Solid", "value": "solid"},
-                                {"label": "Dash", "value": "dash"},
-                                {"label": "Dot", "value": "dot"},
-                                {"label": "DashDot", "value": "dashdot"},
-                            ],
-                            value="solid"
+                    html.Div([
+                        html.Div([
+                            dcc.Graph(id="figure")
+                            ], style={"width": "50%", "display": "inline-block", "verticalAlign": "top"}
                         ),
 
-                        html.Label("Opacity"),
-                        dcc.Slider(id="trace-opacity", min=0, max=1, step=0.05, value=1),
+                        html.Div(id="trace-properties-picker-container", style={"display": "none"}), # initialize trace properties container as hidden
+                        html.Button("✖ Close", id="trace-properties-close", style={"display": "none"}),  # initialize close button for trace properties as hidden                 
 
-                        html.Button("✖ Close", id="trace-properties-close")
-                    ], id="trace-properties-picker-container", style={"display": "none", "marginTop": "10px", "width": "250px"})
-
-                ]),
-
-
-                html.Div([
-                    dash_table.DataTable(
-                        id="data-table",
-                        columns=[{"name": col, "id": col, "selectable": True} for col in self.df_data.columns],
-                        data=self.df_data.to_dict("records"),
-                        column_selectable="multi",
-                        selected_columns=[],
-                        style_table={"maxHeight": "400px", "overflowY": "auto", "overflowX": "auto"},
-                        style_cell={"textAlign": "left", "padding": "5px"},
-                        style_header={"backgroundColor": "lightgrey", "fontWeight": "bold"},
-                    )
-                ], style={"width": "28%", "display": "inline-block", "verticalAlign": "top", "padding": "10px", "textAlign": "center"})
-            ], style={"display": "flex", "justifyContent": "center", "alignItems": "center", "width": "100%"})
-        ])
+                        html.Div([
+                            dash_table.DataTable(
+                                id="data-table",
+                                columns=[{"name": col, "id": col, "selectable": True} for col in self.df_data.columns],
+                                data=self.df_data.to_dict("records"),
+                                column_selectable="multi",
+                                selected_columns=[],
+                                style_table={"maxHeight": "400px", "overflowY": "auto", "overflowX": "auto"},
+                                style_cell={"textAlign": "left", "padding": "5px"},
+                                style_header={"backgroundColor": "lightgrey", "fontWeight": "bold"},
+                            )
+                        ], style={"width": "28%", "display": "inline-block", "verticalAlign": "top", "padding": "10px", "textAlign": "center"})
+                    ], style={"display": "flex", "justifyContent": "center", "alignItems": "center", "width": "100%"})
+                ])
 
     def create_collapsible_section(self, section_name, settings):
         """
@@ -196,7 +172,7 @@ class GraphFormatter:
                 )
             elif isinstance(value, (int, float)):
                 input_component = dcc.Input(type="number", value=value, id=input_id, step=step, style={"width": "100px"})
-            elif isinstance(value, str) and "color" in setting:
+            elif isinstance(value, str) and "color" in setting: # for color settings
                 picker_id = input_id
                 toggle_btn_id = f"{input_id}-toggle"
                 close_btn_id = f"{input_id}-close"
@@ -207,6 +183,20 @@ class GraphFormatter:
                         html.Button("✖ Close", id=close_btn_id)
                     ], id=f"{picker_id}-container", style={"display": "none"})
                 ])
+            elif isinstance(value, str) and "plot_type" in setting: # for plot type selection
+                input_component = dcc.Dropdown(
+                    id=input_id,
+                    options=[
+                        {"label": "Line", "value": "line"},
+                        {"label": "Bar (grouped)", "value": "bar_grouped"},
+                        {"label": "Bar (stacked)", "value": "bar_stacked"},
+                        {"label": "Scatter", "value": "scatter"},
+                        {"label": "Area", "value": "area"}
+                    ],
+                    value=value
+                )
+
+            
             elif isinstance(value, str):
                 input_component = dcc.Input(type="text", value=value, id=input_id, style={"width": "150px"})
             elif isinstance(value, list) and len(value) == 2: # for ranges like xlimit
@@ -329,7 +319,7 @@ class GraphFormatter:
         
         Args:
             col (str): Column name for the trace
-            plot_type (str): Type of plot ("line", "bar", "scatter", "area")
+            plot_type (str): Type of plot ("line", "bar_grouped", "bar_stacked", "scatter", "area")
             style (dict): Style configuration for the trace
             
         Returns:
@@ -341,155 +331,148 @@ class GraphFormatter:
             'name': col,
             'opacity': style.get("opacity", 1.0)
         }
-        
+
+        color = style.get("color", "#636EFA")  # Fallback to default Plotly blue
+        width = style.get("width", 2)
+        dash = style.get("dash", "solid")
+        symbol = style.get("symbol", "circle")  # for scatter
+
         if plot_type == "line":
             return go.Scatter(
                 mode="lines+markers",
                 line=dict(
-                    color=style.get("color"),
-                    width=style.get("width", 2),
-                    dash=style.get("dash", "solid")
+                    color=color,
+                    width=width,
+                    dash=dash
                 ),
                 **base_config
             )
-        elif plot_type == "bar":
+
+        elif plot_type == "bar_grouped" or plot_type == "bar_stacked":
             return go.Bar(
                 marker=dict(
-                    color=style.get("color"),
-                    line=dict(width=style.get("width", 0))
+                    color=color,
+                    line=dict(width=width)
                 ),
                 **base_config
             )
+
         elif plot_type == "scatter":
             return go.Scatter(
                 mode="markers",
                 marker=dict(
-                    color=style.get("color"),
-                    size=style.get("width", 8),  # Use width as marker size
+                    color=color,
+                    size=width,
+                    symbol=symbol,
                     line=dict(width=style.get("line_width", 0))
                 ),
                 **base_config
             )
+
         elif plot_type == "area":
             return go.Scatter(
                 mode="lines",
                 fill='tonexty' if col != self.df_data.columns[0] else 'tozeroy',
                 line=dict(
-                    color=style.get("color"),
-                    width=style.get("width", 2),
-                    dash=style.get("dash", "solid")
+                    color=color,
+                    width=width,
+                    dash=dash
                 ),
                 **base_config
             )
+
         else:
             # Default to line plot
             return go.Scatter(
                 mode="lines+markers",
                 line=dict(
-                    color=style.get("color"),
-                    width=style.get("width", 2),
-                    dash=style.get("dash", "solid")
+                    color=color,
+                    width=width,
+                    dash=dash
                 ),
                 **base_config
             )
 
     def get_style_controls_for_plot_type(self, plot_type, current_style=None):
         """
-        Returns appropriate style controls based on plot type with current values.
+        Returns all style controls, hiding those not applicable to the given plot_type.
         
         Args:
-            plot_type (str): The type of plot
+            plot_type (str): The type of plot (e.g., "line", "bar_grouped", "bar_stacked", "scatter", etc.)
             current_style (dict): Current style settings for the trace
             
         Returns:
-            list: List of HTML components for style controls
+            list: List of Dash components with conditional visibility
         """
         if current_style is None:
             current_style = {}
-            
-        # Get current values or defaults
+
+        # Defaults
         current_color = current_style.get("color", "#636EFA")
         current_opacity = current_style.get("opacity", 1.0)
-        current_width = current_style.get("width", 2 if plot_type in ["line", "area"] else 8 if plot_type == "scatter" else 0)
+        current_width = current_style.get(
+            "width", 2 if plot_type in ["line", "area"] else 8 if plot_type == "scatter" else 0)
         current_dash = current_style.get("dash", "solid")
-        
-        common_controls = [
+        current_scatter_symbol = current_style.get("symbol", "circle")
+
+        def visible(types):
+            return {"display": "block"} if plot_type in types else {"display": "none"}
+
+        all_controls = [
             html.Label("Color"),
-            daq.ColorPicker(id="trace-properties-picker", value={"hex": current_color}),
+            daq.ColorPicker(id="trace-color-picker", value={"hex": current_color}),
+
             html.Label("Opacity"),
-            dcc.Slider(id="trace-opacity", min=0, max=1, step=0.05, value=current_opacity),
+            dcc.Slider(
+            id="trace-opacity",
+            min=0,
+            max=1,
+            step=0.05,
+            value=current_opacity,
+            marks={0: "0", 0.5: "0.5", 1: "1"}
+            ),
+
+            html.Label("Line Width", style=visible(["line", "area", "bar_grouped", "bar_stacked", "scatter"])),
+            dcc.Input(
+            id="trace-line-width",
+            type="number",
+            min=0,
+            step=0.5,
+            value=current_width,
+            style=visible(["line", "area", "bar_grouped", "bar_stacked", "scatter"])
+            ),
+
+            html.Label("Dash Style", style=visible(["line", "area"])),
+            dcc.Dropdown(
+            id="trace-line-style",
+            options=[
+                {"label": "Solid", "value": "solid"},
+                {"label": "Dash", "value": "dash"},
+                {"label": "Dot", "value": "dot"},
+                {"label": "DashDot", "value": "dashdot"},
+            ],
+            value=current_dash,
+            style=visible(["line", "area"])
+            ),
+
+            html.Label("Symbol", style=visible(["scatter"])),
+            dcc.Dropdown(
+            id="trace-scatter-symbol",
+            options=[
+                {"label": "Circle", "value": "circle"},
+                {"label": "Square", "value": "square"},
+                {"label": "Diamond", "value": "diamond"},
+                {"label": "Cross", "value": "cross"},
+            ],
+            value=current_scatter_symbol,
+            style=visible(["scatter"])
+            ),
+
+            html.Button("✖ Close", id="trace-properties-close"),
         ]
-        
-        if plot_type == "line":
-            specific_controls = [
-                html.Label("Line Width"),
-                dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_width),
-                html.Label("Dash Style"),
-                dcc.Dropdown(
-                    id="trace-line-style",
-                    options=[
-                        {"label": "Solid", "value": "solid"},
-                        {"label": "Dash", "value": "dash"},
-                        {"label": "Dot", "value": "dot"},
-                        {"label": "DashDot", "value": "dashdot"},
-                    ],
-                    value=current_dash
-                ),
-            ]
-        elif plot_type == "bar":
-            specific_controls = [
-                html.Label("Border Width"),
-                dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_width),
-                dcc.Dropdown(
-                    id="trace-line-style",
-                    options=[],
-                    value="solid",
-                    style={"display": "none"}  # No dash style for bars
-                ),
-            ]
-        elif plot_type == "scatter":
-            specific_controls = [
-                html.Label("Marker Size"),
-                dcc.Input(id="trace-line-width", type="number", min=1, step=1, value=current_width),
-                html.Label("Marker Border Width"),
-                #dcc.Input(id="trace-line-border-width", type="number", min=0, step=0.5, value=0),
-                dcc.Dropdown(
-                    id="trace-line-style",
-                    options=[],
-                    value="solid",
-                    style={"display": "none"}  # No dash style for bars
-                ),
-            ]
-        elif plot_type == "area":
-            specific_controls = [
-                html.Label("Line Width"),
-                dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_width),
-                html.Label("Dash Style"),
-                dcc.Dropdown(
-                    id="trace-line-style",
-                    options=[
-                        {"label": "Solid", "value": "solid"},
-                        {"label": "Dash", "value": "dash"},
-                        {"label": "Dot", "value": "dot"},
-                        {"label": "DashDot", "value": "dashdot"},
-                    ],
-                    value=current_dash
-                ),
-            ]
-        else:
-            specific_controls = [
-                html.Label(""),
-                dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_width, style={"display": "none"}),
-                html.Label(""),
-                dcc.Dropdown(
-                    id="trace-line-style",
-                    options=[],
-                    value=current_dash,
-                    style={"display": "none"}  # No dash style for other types
-                ),
-            ]
-            
-        return common_controls + specific_controls + [html.Button("✖ Close", id="trace-properties-close")]
+
+        return all_controls
+
 
     def register_figure_callbacks(self):
         """
@@ -511,7 +494,7 @@ class GraphFormatter:
             self.input_ids
         )
         def update_figure(*args):
-            *values, selected_columns, trace_colors = args
+            *values, selected_columns, trace_properties = args
 
             updated_config = {}
             i = 0
@@ -535,11 +518,11 @@ class GraphFormatter:
             fig = go.Figure()
             
             # Get plot type from config
-            plot_type = updated_config.get("plot_settings", {}).get("type", "line")
+            plot_type = updated_config.get("properties", {}).get("plot_type", "line")
 
             # Plot selected columns using the factory method
             for col in selected_columns:
-                style = trace_colors.get(col, {})
+                style = trace_properties.get(col, {})
                 trace = self.create_trace(col, plot_type, style)
                 fig.add_trace(trace)
 
@@ -606,6 +589,11 @@ class GraphFormatter:
                     )
                 )
 
+            if plot_type == "bar_stacked":
+                fig.update_layout(barmode="stack")
+            elif plot_type == "bar_grouped":
+                fig.update_layout(barmode="group")
+
             return fig
 
         @self.app.callback(
@@ -613,14 +601,14 @@ class GraphFormatter:
             Output("trace-properties-picker-container", "children"),
             Output("selected-trace", "data"),
             Input("figure", "clickData"),
-            Input("trace-properties-close", "n_clicks"),
-            Input("plot_settings-type", "value"),  # Add plot type as input
+            Input("trace-properties-close", "n_clicks"), # Needed for trigger, not directly used
+            Input("properties-plot_type", "value"),  # Add plot type as input
             State("trace-properties-picker-container", "style"),
             State("figure", "figure"),
             State("trace-properties", "data"),  # Add current trace colors as state
             prevent_initial_call=True
         )
-        def toggle_trace_picker(clickData, close_clicks, plot_type, current_style, figure_data, trace_colors):
+        def toggle_trace_picker(clickData, _, plot_type, current_style, figure_data, trace_properties):
             if not ctx.triggered:
                 return current_style, dash.no_update, dash.no_update
                 
@@ -634,22 +622,22 @@ class GraphFormatter:
                 trace_name = figure_data["data"][curve_idx]["name"]
                 
                 # Get current trace style or defaults
-                current_trace_style = trace_colors.get(trace_name, {})
+                current_trace_style = trace_properties.get(trace_name, {})
                 
                 # Get plot type (from input or fallback to config)
                 if plot_type is None:
-                    plot_type = self.config.get("plot_settings", {}).get("type", "line")
+                    plot_type = self.config.get("properties", {}).get("plot_type", "line")
                 
                 controls = self.get_style_controls_for_plot_type(plot_type, current_trace_style)
                 
                 return {"display": "block", "marginTop": "10px", "width": "250px"}, controls, trace_name
             
             # If plot type changed, update controls with current trace if one is selected
-            elif trigger == "plot_settings-type" and current_style.get("display") == "block":
-                # Get currently selected trace from trace_colors or use first available
-                selected_trace = list(trace_colors.keys())[0] if trace_colors else None
+            elif trigger == "properties-plot_type" and current_style.get("display") == "block":
+                # Get currently selected trace from trace_properties or use first available
+                selected_trace = list(trace_properties.keys())[0] if trace_properties else None
                 if selected_trace:
-                    current_trace_style = trace_colors.get(selected_trace, {})
+                    current_trace_style = trace_properties.get(selected_trace, {})
                     controls = self.get_style_controls_for_plot_type(plot_type, current_trace_style)
                     return current_style, controls, selected_trace
                 
@@ -657,7 +645,7 @@ class GraphFormatter:
 
         @self.app.callback(
             Output("trace-properties", "data", allow_duplicate=True),
-            Input("trace-properties-picker", "value"),
+            Input("trace-color-picker", "value"),
             Input("trace-line-width", "value"),
             Input("trace-line-style", "value"),
             Input("trace-opacity", "value"),
@@ -667,7 +655,7 @@ class GraphFormatter:
         )
         def update_trace_style(color, width, dash, opacity, trace_name, data):
             if trace_name:
-                plot_type = self.config.get("plot_settings", {}).get("type", "line")
+                plot_type = self.config.get("properties", {}).get("plot_type", "line")
                 
                 style_data = {
                     "color": color["hex"] if color else "#636EFA",
@@ -680,7 +668,7 @@ class GraphFormatter:
                         "width": width if width is not None else 2,
                         "dash": dash if dash else "solid"
                     })
-                elif plot_type == "bar":
+                elif plot_type == "bar_stacked" or plot_type == "bar_grouped":
                     style_data["width"] = width if width is not None else 0  # border width
                 elif plot_type == "scatter":
                     style_data["width"] = width if width is not None else 8  # marker size

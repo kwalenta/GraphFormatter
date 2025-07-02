@@ -1,11 +1,10 @@
-plot_settings:
-  type: "line"  # Options: "line", "bar", "scatter", "area"
 
 properties:
   width: 800
   height: 600
   paper_bgcolor: white
   plot_bgcolor: white
+  plot_type: "line"
 
 margin:
   t: 130
