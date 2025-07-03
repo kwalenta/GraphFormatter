@@ -19,7 +19,7 @@ xaxis:
   ticks: outside
   showgrid: false
   zeroline: true
-  range: [0, 100]
+  range: [0, 50]
 
 yaxis:
   showline: true
@@ -33,8 +33,8 @@ title:
   text: Glorious Plotly Chart
   subtitle: With a clean subtitle
   fontsize: 24
-  x: 0.5
-  y: 1.08
+  x: 0.22
+  y: 1.18
   xanchor: center
   yanchor: top
 

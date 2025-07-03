@@ -1,3 +1,5 @@
 /.DS_Store
-/GraphFormatter_old.py
-GraphFormatter_old2.py
+
+
+/__pycache__/
+*.pyc
