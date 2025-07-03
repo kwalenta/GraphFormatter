@@ -74,4 +74,10 @@ legend:
   bordercolor: black
   borderwidth: 1
 
+save:
+  filename: my_plot
+  file_format: png
+  scale: 2
+  width: 800
+  height: 600
 

@@ -178,6 +178,7 @@ class CallbackRegistrar:
         @self.app.callback(
             Output("figure", "figure"),
             Output("stored-config", "data", allow_duplicate=True),
+            Output("figure", "config"),  # NEW
             input_ids
         )
         def update_figure(*args):
@@ -255,7 +256,7 @@ class CallbackRegistrar:
                         font=dict(size=updated_config['footnote']['fontsize'], color=updated_config['footnote']['color'])
                     )
                 ],
-                legend=updated_config.get("legend", {})
+                legend=updated_config.get("legend", {}),
             )
 
             if updated_config["top-line"]["enabled"]:
@@ -277,7 +278,15 @@ class CallbackRegistrar:
             elif plot_type == "bar_grouped":
                 fig.update_layout(barmode="group")
 
-            return fig, updated_config
+            return fig, updated_config, {
+                "toImageButtonOptions": {
+                    "format": updated_config.get("save", {}).get("file_format", "png"),
+                    "filename": updated_config.get("save", {}).get("filename", "plot"),
+                    "width": updated_config.get("save", {}).get("width", 800),
+                    "height": updated_config.get("save", {}).get("height", 600),
+                    "scale": updated_config.get("save", {}).get("scale", 2),
+                }
+            }
 
     # ------------------ 6. Store config for download ------------------
 

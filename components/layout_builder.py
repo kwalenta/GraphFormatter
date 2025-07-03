@@ -97,6 +97,16 @@ class LayoutBuilder:
                     ],
                     value=value
                 )
+            elif isinstance(value, str) and "file_format" in setting:
+                input_component = dcc.Dropdown(
+                    id=input_id,
+                    options=[
+                        {"label": "PNG", "value": "png"},
+                        {"label": "JPEG", "value": "jpeg"},
+                        {"label": "SVG", "value": "svg"},
+                    ],
+                    value=value
+                )
             elif isinstance(value, str):
                 input_component = dcc.Input(type="text", value=value, id=input_id, style={"width": "150px"})
             elif isinstance(value, list) and len(value) == 2:
