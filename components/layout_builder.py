@@ -13,8 +13,22 @@ class LayoutBuilder:
         return html.Div([
             dcc.Store(id="selected-trace", data=None),
             dcc.Store(id="trace-properties", data={}),
+            dcc.Store(id="uploaded-settings", data={}),
+            dcc.Store(id="stored-config", data={}),
+
 
             html.H3("Plot Customizer"),
+            html.Div([
+                html.Div([
+                    dcc.Upload(
+                        id="upload-trace-styles",
+                        children=html.Button("🎨 Upload Trace Styles"),
+                        multiple=False
+                    ),
+                    html.Button("⬇ Download Settings", id="download-settings-btn"),
+                ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
+                dcc.Download(id="download-settings"),
+            ]),
 
             html.Div([
                 *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]

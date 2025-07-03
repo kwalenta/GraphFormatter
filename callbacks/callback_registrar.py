@@ -3,7 +3,11 @@ from dash.exceptions import PreventUpdate
 from dash import html
 import dash_daq as daq
 import plotly.graph_objects as go
-
+import base64
+import json
+import io
+import zipfile
+import yaml
 
 class CallbackRegistrar:
     def __init__(self, app, config, df_data, get_style_controls_fn):
@@ -16,7 +20,9 @@ class CallbackRegistrar:
         self.register_toggle_callbacks()
         self.register_color_picker_callbacks()
         self.register_trace_popup_callbacks()
-        self.register_style_update_callbacks()     
+        self.register_style_update_callbacks()  
+        self.register_store_config_callback()   
+        self.register_upload_callbacks()
         
     # ------------------ 1. Collapsible section toggles ------------------
 
@@ -171,6 +177,7 @@ class CallbackRegistrar:
         """
         @self.app.callback(
             Output("figure", "figure"),
+            Output("stored-config", "data", allow_duplicate=True),
             input_ids
         )
         def update_figure(*args):
@@ -270,4 +277,60 @@ class CallbackRegistrar:
             elif plot_type == "bar_grouped":
                 fig.update_layout(barmode="group")
 
-            return fig
+            return fig, updated_config
+
+    # ------------------ 6. Store config for download ------------------
+
+    def register_store_config_callback(self):
+        @self.app.callback(
+            Output("download-settings", "data"),
+            Input("download-settings-btn", "n_clicks"),
+            State("stored-config", "data"),
+            State("trace-properties", "data"),
+            prevent_initial_call=True
+        )
+        def download_combined_zip(n_clicks, config_data, trace_data):
+            if not config_data or not trace_data:
+                raise PreventUpdate
+
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w") as zf:
+                # YAML config
+                yaml_str = yaml.dump(config_data, sort_keys=False)
+                zf.writestr("config.yml", yaml_str)
+
+                # JSON trace styles
+                json_str = json.dumps(trace_data, indent=2)
+                zf.writestr("trace_styles.json", json_str)
+
+            zip_buffer.seek(0)
+            return dcc.send_bytes(zip_buffer.read(), filename="plot_settings.zip")
+        
+
+    # ------------------ 7. Upload config callback ------------------
+
+    def register_upload_callbacks(self):
+        """
+        Registers the callback for uploading settings from a JSON file.
+        The uploaded file should contain a JSON object with "config" and "traces" keys.
+        """
+        @self.app.callback(
+            Output("trace-properties", "data", allow_duplicate=True),
+            Input("upload-trace-styles", "contents"),
+            prevent_initial_call="initial_duplicate"
+        )
+        def load_trace_styles(contents):
+            if contents is None:
+                raise PreventUpdate
+
+            content_type, content_string = contents.split(",")
+            decoded = base64.b64decode(content_string)
+            
+            try:
+                trace_styles = json.loads(decoded.decode("utf-8"))
+            except Exception as e:
+                print("Error decoding trace styles:", e)
+                raise PreventUpdate
+
+            return trace_styles
+
