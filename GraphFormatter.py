@@ -1,5 +1,6 @@
 import dash
 from dash import dcc, html, Input, Output, State, dash_table, ctx
+import dash_daq as daq
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -69,18 +70,14 @@ class GraphFormatter:
         return ids
 
     def get_style_controls_for_plot_type(self, plot_type, current_style=None):
-        """
-        Returns Dash components for styling traces, conditionally visible by plot type.
-        """
-        from dash import dcc, html
-        import dash_daq as daq
 
         if current_style is None:
             current_style = {}
 
         current_color = current_style.get("color", "#636EFA")
         current_opacity = current_style.get("opacity", 1.0)
-        current_width = current_style.get("width", 2 if plot_type in ["line", "area"] else 8 if plot_type == "scatter" else 0)
+        current_line_width = current_style.get("line_width", 2)
+        current_marker_size = current_style.get("marker_size", 8)
         current_dash = current_style.get("dash", "solid")
         current_scatter_symbol = current_style.get("symbol", "circle")
 
@@ -90,22 +87,32 @@ class GraphFormatter:
             html.Label("Color"),
             daq.ColorPicker(id="trace-color-picker", value={"hex": current_color}),
             html.Label("Opacity"),
-            dcc.Slider(id="trace-opacity", min=0, max=1, step=0.05, value=current_opacity),
-            html.Label("Line Width", style=visible(["line", "area", "bar_grouped", "bar_stacked", "scatter"])),
-            dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_width,
-                      style=visible(["line", "area", "bar_grouped", "bar_stacked", "scatter"])),
+            dcc.Slider(
+                id="trace-opacity",
+                min=0,
+                max=1,
+                step=0.05,
+                value=current_opacity,
+                marks={0: "0", 0.5: "0.5", 1: "1"}
+            ),
+            html.Label("Line Width", style=visible(["line", "area"])),
+            dcc.Input(id="trace-line-width", type="number", min=0, step=0.5, value=current_line_width,
+                    style=visible(["line", "area"])),
+            html.Label("Marker Size", style=visible(["scatter", "line"])),
+            dcc.Input(id="trace-marker-size", type="number", min=0, step=0.5, value=current_marker_size,
+                    style=visible(["scatter", "line"])),
             html.Label("Dash Style", style=visible(["line", "area"])),
             dcc.Dropdown(id="trace-line-style",
-                         options=[{"label": "Solid", "value": "solid"}, {"label": "Dash", "value": "dash"},
-                                  {"label": "Dot", "value": "dot"}, {"label": "DashDot", "value": "dashdot"}],
-                         value=current_dash,
-                         style=visible(["line", "area"])),
+                options=[{"label": "Solid", "value": "solid"}, {"label": "Dash", "value": "dash"},
+                    {"label": "Dot", "value": "dot"}, {"label": "DashDot", "value": "dashdot"}],
+                value=current_dash,
+                style=visible(["line", "area"])),
             html.Label("Symbol", style=visible(["scatter"])),
             dcc.Dropdown(id="trace-scatter-symbol",
-                         options=[{"label": "Circle", "value": "circle"}, {"label": "Square", "value": "square"},
-                                  {"label": "Diamond", "value": "diamond"}, {"label": "Cross", "value": "cross"}],
-                         value=current_scatter_symbol,
-                         style=visible(["scatter"])),
+                options=[{"label": "Circle", "value": "circle"}, {"label": "Square", "value": "square"},
+                    {"label": "Diamond", "value": "diamond"}, {"label": "Cross", "value": "cross"}],
+                value=current_scatter_symbol,
+                style=visible(["scatter"])),
             html.Button("✖ Close", id="trace-properties-close"),
         ]
 
@@ -117,15 +124,34 @@ class GraphFormatter:
             "name": col,
             "opacity": style.get("opacity", 1.0),
         }
+        line_width = style.get("line_width", 2)
+        marker_size = style.get("marker_size", 8)
 
         if plot_type == "line":
-            return go.Scatter(x=self.df_data.index, y=self.df_data[col], mode="lines+markers",
-                              line=dict(color=style.get("color", "#636EFA"), width=style.get("width", 2),
-                                        dash=style.get("dash", "solid")), **common_style)
+            return go.Scatter(
+                x=self.df_data.index, y=self.df_data[col], mode="lines+markers",
+                line=dict(
+                    color=style.get("color", "#636EFA"),
+                    width=line_width,
+                    dash=style.get("dash", "solid")
+                ),
+                marker=dict(
+                    size=marker_size,
+                    color=style.get("color", "#636EFA"),
+                    symbol=style.get("symbol", "circle")
+                ),
+                **common_style
+            )
         elif plot_type == "scatter":
-            return go.Scatter(x=self.df_data.index, y=self.df_data[col], mode="markers",
-                              marker=dict(color=style.get("color", "#636EFA"), size=style.get("width", 8),
-                                          symbol=style.get("symbol", "circle")), **common_style)
+            return go.Scatter(
+                x=self.df_data.index, y=self.df_data[col], mode="markers",
+                marker=dict(
+                    color=style.get("color", "#636EFA"),
+                    size=marker_size,
+                    symbol=style.get("symbol", "circle")
+                ),
+                **common_style
+            )
         elif plot_type == "bar_grouped" or plot_type == "bar_stacked":
             return go.Bar(x=self.df_data.index, y=self.df_data[col],
                           marker_color=style.get("color", "#636EFA"), **common_style)

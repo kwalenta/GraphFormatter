@@ -141,31 +141,27 @@ class CallbackRegistrar:
             Output("trace-properties", "data", allow_duplicate=True),
             Input("trace-color-picker", "value"),
             Input("trace-line-width", "value"),
+            Input("trace-marker-size", "value"),
             Input("trace-line-style", "value"),
             Input("trace-opacity", "value"),
-            Input("trace-scatter-symbol", "value"),
             State("selected-trace", "data"),
             State("trace-properties", "data"),
             prevent_initial_call="initial_duplicate"
         )
-        def update_trace_style(color, width, dash, opacity, symbol, trace_name, data):
+        def update_trace_style(color, line_width, marker_size, dash, opacity, trace_name, data):
             if trace_name:
+                plot_type = self.config.get("plot_settings", {}).get("type", "line")
                 style_data = {
                     "color": color["hex"] if color else "#636EFA",
-                    "opacity": opacity if opacity is not None else 1.0
+                    "opacity": opacity if opacity is not None else 1.0,
+                    "line_width": line_width if line_width is not None else 2,
+                    "marker_size": marker_size if marker_size is not None else 8,
                 }
-
-                if width is not None:
-                    style_data["width"] = width
-
-                if dash:
-                    style_data["dash"] = dash
-
-                if symbol:
-                    style_data["symbol"] = symbol  # OK to store even if not relevant for every plot type
-
+                if plot_type in ["line", "area"]:
+                    style_data["dash"] = dash if dash else "solid"
+                if plot_type == "scatter":
+                    style_data["symbol"] = style_data.get("symbol", "circle")
                 data[trace_name] = style_data
-
             return data
 
     # ------------------ 5. Figure update logic ------------------
