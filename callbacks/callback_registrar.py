@@ -285,7 +285,8 @@ class CallbackRegistrar:
                     "width": updated_config.get("save", {}).get("width", 800),
                     "height": updated_config.get("save", {}).get("height", 600),
                     "scale": updated_config.get("save", {}).get("scale", 2),
-                }
+                },
+                "modeBarButtonsToRemove": ["zoom2d", "pan2d", "select2d", "lasso2d"],
             }
 
     # ------------------ 6. Store config for download ------------------
