@@ -16,44 +16,44 @@ class LayoutBuilder:
             dcc.Store(id="uploaded-settings", data={}),
             dcc.Store(id="stored-config", data={}),
 
+            html.H1("Plot Customizer", style={"textAlign": "center"}),
 
-            html.H3("Plot Customizer"),
             html.Div([
-                html.Div([
-                    dcc.Upload(
-                        id="upload-trace-styles",
-                        children=html.Button("🎨 Upload Trace Styles"),
-                        multiple=False
-                    ),
-                    html.Button("⬇ Download Settings", id="download-settings-btn"),
-                ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
-                dcc.Download(id="download-settings"),
+            html.Div([
+                dcc.Upload(
+                id="upload-trace-styles",
+                children=html.Button("🎨 Upload Trace Styles"),
+                multiple=False
+                ),
+                html.Button("⬇ Download Settings", id="download-settings-btn"),
+            ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
+            dcc.Download(id="download-settings"),
             ]),
 
             html.Div([
-                *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]
+            *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]
             ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
 
             html.Div([
-                html.Div([
-                    dcc.Graph(id="figure")
-                ], style={"width": "50%", "display": "inline-block", "verticalAlign": "top"}),
+            html.Div([
+                dcc.Graph(id="figure")
+            ], style={"width": "50%", "display": "inline-block", "verticalAlign": "top"}),
 
-                html.Div(id="trace-properties-picker-container", style={"display": "none"}),
-                html.Button("✖ Close", id="trace-properties-close", style={"display": "none"}),
+            html.Div(id="trace-properties-picker-container", style={"display": "none"}),
+            html.Button("✖ Close", id="trace-properties-close", style={"display": "none"}),
 
-                html.Div([
-                    dash_table.DataTable(
-                        id="data-table",
-                        columns=[{"name": col, "id": col, "selectable": True} for col in self.df_data.columns],
-                        data=self.df_data.to_dict("records"),
-                        column_selectable="multi",
-                        selected_columns=[],
-                        style_table={"maxHeight": "400px", "overflowY": "auto", "overflowX": "auto"},
-                        style_cell={"textAlign": "left", "padding": "5px"},
-                        style_header={"backgroundColor": "lightgrey", "fontWeight": "bold"},
-                    )
-                ], style={"width": "28%", "display": "inline-block", "verticalAlign": "top", "padding": "10px", "textAlign": "center"})
+            html.Div([
+                dash_table.DataTable(
+                id="data-table",
+                columns=[{"name": col, "id": col, "selectable": True} for col in self.df_data.columns],
+                data=self.df_data.to_dict("records"),
+                column_selectable="multi",
+                selected_columns=[],
+                style_table={"maxHeight": "400px", "overflowY": "auto", "overflowX": "auto"},
+                style_cell={"textAlign": "left", "padding": "5px"},
+                style_header={"backgroundColor": "lightgrey", "fontWeight": "bold"},
+                )
+            ], style={"width": "28%", "display": "inline-block", "verticalAlign": "top", "padding": "10px", "textAlign": "center"})
             ], style={"display": "flex", "justifyContent": "center", "alignItems": "center", "width": "100%"})
         ])
 
