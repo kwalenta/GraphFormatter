@@ -25,8 +25,10 @@ class GraphFormatter:
         self.app.title = "Interactive Plot Editor"
 
         # Load data and config
-        self.df_data = DataProvider().generate_dummy_data()
         self.config = ConfigLoader(config_path).get_config()
+        filepath = self.config.get("filepath", "")
+        self.df_data = DataProvider().load_data(filepath)
+
         self.input_ids = self.build_input_ids()
 
         # Build layout
@@ -59,6 +61,8 @@ class GraphFormatter:
         """
         ids = []
         for section, settings in self.config.items():
+            if section == "filepath":
+                continue
             for setting, value in settings.items():  
                 if isinstance(value, list) and len(value) == 2:
                     ids.append(Input(f"{section}-{setting}_0", "value"))

@@ -31,7 +31,7 @@ class LayoutBuilder:
             ]),
 
             html.Div([
-            *[self.create_collapsible_section(section, settings) for section, settings in self.config.items()]
+            *[self.create_collapsible_section(section, settings) for section, settings in self.config.items() if section != "filepath"],
             ], style={"display": "flex", "flexWrap": "wrap", "gap": "10px", "padding": "10px 20px"}),
 
             html.Div([

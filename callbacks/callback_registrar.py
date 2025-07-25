@@ -31,6 +31,8 @@ class CallbackRegistrar:
         Registers toggle callbacks for each section defined in the configuration.
         """
         for section in self.config:
+            if section == "filepath":
+                continue
             toggle_id = f"{section}-toggle"
             container_id = f"{section}-container"
 
@@ -57,6 +59,8 @@ class CallbackRegistrar:
 
     def register_color_picker_callbacks(self):
             for section, settings in self.config.items():
+                if section == "filepath":
+                    continue
                 for setting in settings:
                     if isinstance(settings[setting], str) and "color" in setting:
                         toggle_id = f"{section}-{setting}-toggle"
@@ -187,6 +191,9 @@ class CallbackRegistrar:
             updated_config = {}
             i = 0
             for section, settings in self.config.items():
+                if section == "filepath":
+                    updated_config[section] = self.config[section]
+                    continue
                 updated_config[section] = {}
                 for setting, default_val in settings.items():
                     input_val = values[i]
